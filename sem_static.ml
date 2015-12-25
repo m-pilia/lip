@@ -631,7 +631,7 @@ let rec sem_exp e env = match e with
        | DBool i, (DPair _   as t), (DPair _   as f)   
        | DBool i, (DFun _    as t), (DFun _    as f) -> if i then t else f 
        | _ -> failwith "TODO")
-  | Let (l, e) -> let env = bind_ids env l in sem_exp e env
+  | Let (l, e) -> let env = bind_ids env (List.rev l) in sem_exp e env
   | Fun (l, e) -> DFun (l, e) (* TODO parameters checking; (type inference?) *)
   | Apply (e, args) -> (* TODO type check? *)
       (match sem_exp e env with
@@ -652,7 +652,7 @@ and bind_args env ids args =
   try
     List.fold_left2 bind env ids vals
   with
-  | Invalid_argument m -> failwith "TODO"
+  | Invalid_argument m -> failwith "Mismatching function arguments"
   | _                  -> failwith "TODO"
 ;;
 
@@ -678,7 +678,7 @@ let rec dump_dval v = match v with
       "DFun (" ^ 
       "[" ^ (String.concat "; " l) ^ "], " ^
       (* (dump_dval e) *) "some stuff" ^ ")\n"
-  | _ -> failwith "TODO"
+  | _ -> failwith "DUMP FAIL"
 ;;
 
 let env = emptyenv();;

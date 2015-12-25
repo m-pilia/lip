@@ -14,9 +14,8 @@ let rec fold_lines acc =
 ;;
 
 let _ = 
-    let sprog = fold_lines ""
-    in 
-    (*to run the interpreter *)
-    print_string (dump_dval (sem_exp (parse_prog sprog) (emptyenv ())))
+  let sprog = fold_lines "" in 
+  (* to run the interpreter *)
+  print_string (dump_dval (sem_exp (parse_prog sprog) (emptyenv ())))
 ;;
 
