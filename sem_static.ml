@@ -109,6 +109,8 @@ let applyenv (Env e) x = match e x with
  *                                      *
  * ************************************ *)
 
+let plus, minus = -5, -3
+;;
 
 (** 
  * Invert a sign.
@@ -118,6 +120,39 @@ let applyenv (Env e) x = match e x with
 let inv_sign s = match s with
   | Positive -> Negative
   | Negative -> Positive
+;;
+
+
+(**
+ * Convert a string into a Bigint value.
+ * @param s String formed by an optional sign ('+', '-') followed by the 
+ *          succession of digits of the value.
+ * @return A Bigint value corresponding to the input string.
+ *)
+let str_to_bigint s =
+  let rec stbr i l =
+    if i < 0 then 
+      l  
+    else
+      let v = (Char.code(s.[i]) - (Char.code '0')) in
+      if (v >= 0 && v <= 9) || v = plus || v = minus then
+        stbr (i - 1) (v :: l)
+      else 
+        failwith "The bigint representation contains invalid characters" in
+  Bigint (List.rev (stbr (String.length s - 1) []))
+;;
+
+
+(**
+ * 
+ *)
+let bigint_repr l = 
+  match List.rev l with
+  | [] -> DBigint ([], Positive)
+  | h :: t when h = minus -> DBigint (List.rev t, Negative)
+  | h :: t when h = plus  -> DBigint (List.rev t, Positive)
+  | h :: t when h >= 0 && h <= 9 -> DBigint (List.rev (h :: t), Positive)
+  | _ -> failwith "TODO bigint representation conversion";
 ;;
 
 
@@ -557,7 +592,7 @@ let apply_operation a b oi ob = match a, b with
   | DInt a, DBigint (b, sb) ->
       let (q, s) = ob (cast_int a) (b, sb) in
       DBigint (q, s)
-  | _ -> failwith "TODO"
+  | _ -> failwith "TODO artithmetic operation"
 ;;
 
 
@@ -570,24 +605,24 @@ let apply_operation a b oi ob = match a, b with
 let rec sem_exp e env = match e with
   | Eint n -> DInt n
   | Ebool b -> DBool b
-  | Bigint l -> DBigint (l, Positive) (* TODO sign *)
+  | Bigint l -> bigint_repr l
   | Castint n -> 
       (match sem_exp n env with
        | DInt n -> let v, s = cast_int n in DBigint (v, s)
-       | _      -> failwith "TODO")
+       | _      -> failwith "TODO Castint")
   | Emptylist -> DList ([])
   | Cons (e, l) -> 
       (match sem_exp e env, sem_exp l env with
        | e, DList l -> DList (e :: l) (* TODO type check *)
-       | _          -> failwith "TODO")
+       | _          -> failwith "TODO Cons")
   | Head l -> 
-      (match l with
-       | Cons (h, t) -> sem_exp h env
-       | _           -> failwith "TODO")
+      (match sem_exp l env with
+       | DList l -> List.hd l (* TODO manage hd exceptions *)
+       | _       -> failwith "TODO Head")
   | Tail l       -> 
-      (match l with
-       | Cons (h, t) -> sem_exp t env
-       | _           -> failwith "TODO")
+      (match sem_exp l env with
+       | DList l -> DList (List.tl l) (* TODO manage tl exceptions  *)
+       | _           -> failwith "TODO Tail")
   | Den x -> applyenv env x
   | Prod (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( * ) bmul
   | Sum  (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( + ) bsum
@@ -598,30 +633,30 @@ let rec sem_exp e env = match e with
       (match sem_exp a env, sem_exp b env with
        | DInt a, DInt b -> DBool (a < b)
        | DBigint (a, sa), DBigint (b, sb) -> DBool (bless (a, sa) (b, sb))
-       | _ -> failwith "TODO")
+       | _ -> failwith "TODO Less")
   | Eq (a, b) -> DBool ((sem_exp a env) = (sem_exp b env))
   | Iszero e -> sem_exp (Or (Eq (e, Eint 0), Eq (e, Bigint ([0])))) env
   | Or (a, b) ->
       (match sem_exp a env, sem_exp b env with
        | DBool a, DBool b -> DBool (a || b)
-       | _                -> failwith "TODO")
+       | _                -> failwith "TODO Or")
   | And (a, b) ->
       (match sem_exp a env, sem_exp b env with
        | DBool a, DBool b -> DBool (a && b)
-       | _                -> failwith "TODO")
+       | _                -> failwith "TODO And")
   | Not e ->
       (match sem_exp e env with
        | DBool a -> DBool (not a)
-       | _       -> failwith "TODO")
+       | _       -> failwith "TODO Not")
   | Pair (a, b) -> DPair (sem_exp a env, sem_exp b env)
   | Fst e ->
       (match sem_exp e env with
        | DPair (a, b) -> a
-       | _            -> failwith "TODO")
+       | _            -> failwith "TODO Fst")
   | Snd e ->
       (match sem_exp e env with
        | DPair (a, b) -> b
-       | _            -> failwith "TODO")
+       | _            -> failwith "TODO Snd")
   | Ifthenelse (i, t, f) ->
       (match sem_exp i env, sem_exp t env, sem_exp f env with
        | DBool i, (DInt _    as t), (DInt _    as f)   
@@ -630,13 +665,13 @@ let rec sem_exp e env = match e with
        | DBool i, (DList _   as t), (DList _   as f)   
        | DBool i, (DPair _   as t), (DPair _   as f)   
        | DBool i, (DFun _    as t), (DFun _    as f) -> if i then t else f 
-       | _ -> failwith "TODO")
+       | _ -> failwith "TODO Ifthenelse")
   | Let (l, e) -> let env = bind_ids env (List.rev l) in sem_exp e env
   | Fun (l, e) -> DFun (l, e) (* TODO parameters checking; (type inference?) *)
   | Apply (e, args) -> (* TODO type check? *)
       (match sem_exp e env with
        | DFun (ids, e) -> sem_exp e (bind_args env ids args)
-       | _ -> failwith "TODO"
+       | _ -> failwith "TODO Apply"
   )
 
 (** Bind a list of identifiers to their values into an environment. *)
@@ -692,3 +727,23 @@ dump_dval (sem_exp (
     Apply (Den "f", [Bigint [1;1]])
   )
 ) env);;
+
+
+(*
+let fact n = sem_exp (Let([("fatt",
+     Fun(["x"],
+         Ifthenelse(Iszero(Den("x")),
+                    Eint(1),
+                    Prod(Den("x"), 
+                         Apply(Den("fatt"),
+                               [
+                                Diff(Den("x"),
+                                     Eint(1))
+                               ])
+                          )
+                    )
+          )
+     )],
+     Apply(Den("fatt"),[Eint(n)])
+)) (emptyenv ());; 
+*)
