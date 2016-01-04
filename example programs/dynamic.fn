@@ -1,6 +1,4 @@
-let x = Bigint "1" and z = 3 in
-  let f = fun (a; b) -> FST a + SND a + b + 1 and y = 2 in
-    let g = fun (f) -> f ((1, 2); 4) and h = fun() -> g in
-      let l = 1 :: 2 :: 3 :: 4 :: [] in
-        let c = x+y+z + h()(f) + HD l + HD TL l + HD TL TL l + HD TL TL TL l in
-          if (c + 1 = Bigint "25") && (!false) then 1 else 2
+let x = 2 in
+  let f = fun (y) -> x + y in
+    let x = 4 in
+      f(2)

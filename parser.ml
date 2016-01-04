@@ -89,6 +89,7 @@ EXTEND Gram
     | "false" -> Ebool(false)
     | "("; e = SELF; ")" -> e 
     | "["; "]" -> Emptylist
+    | "["; l = LIST1 SELF SEP ";"; "]" -> cons_of_list l
     | "("; e1 = exp; ","; e2 = exp; ")" -> Pair(e1,e2)]
   | "Ifthenelse" LEFTA
     [ "if"; e = exp; "then"; c1 = SELF; "else"; c2 = SELF 
