@@ -581,6 +581,17 @@ let bmod (x, sx) (y, sy) =
 
 
 (**
+ * Generate a list in abstract syntax from an OCaml list.
+ * @param l List of exp elements.
+ * @return A Cons object containing the elements from `l`.
+ *)
+let rec cons_of_list = function
+  | []     -> Emptylist
+  | h :: t -> Cons(h, cons_of_list t)
+;;
+
+
+(**
  * Return the semantic obtained applying an operation to two polimorfic 
  * operands.
  * @param env Environment for the computation.
@@ -634,10 +645,7 @@ let rec sem_exp e env = match e with
        | _           -> failwith "TODO Tail")
   | Den x -> applyenv env x
 (*       let r = applyenv env x in 
-      (match r with
-       | DInt n when n < - 5 -> failwith "stop!!"
-       | _ -> print_string (x ^ "=" ^ (dump_dval r) ^ "\n"); r
-      ) *)
+         print_string (x ^ "=" ^ (dump_dval r) ^ "\n"); r *)
   | Prod (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( * ) bmul
   | Sum  (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( + ) bsum
   | Diff (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( - ) bsub
@@ -706,28 +714,28 @@ and bind_args env ids args =
 (* test *)
 
 let rec dump_dval v = match v with
-  | DInt n -> Printf.sprintf "DInt (%d)\n" n
-  | DBool b -> Printf.sprintf "DBool (%B)\n" b
+  | DInt n -> Printf.sprintf "DInt (%d)" n
+  | DBool b -> Printf.sprintf "DBool (%B)" b
   | DBigint (l, s) -> 
       "DBigint (" ^
       "[" ^ (String.concat "; " (List.map string_of_int l)) ^ "], " ^
-      (if s = Positive then "Positive" else "Negative") ^ ")\n"
+      (if s = Positive then "Positive" else "Negative") ^ ")"
   | DList l -> 
       "DList (" ^
       "[" ^ (String.concat "; " (List.map dump_dval l)) ^ "]" ^
-      ")\n"
+      ")"
   | DPair (l, r) -> 
       "DPair (" ^
       (dump_dval l) ^ ", " ^
-      (dump_dval r) ^ ")\n"
+      (dump_dval r) ^ ")"
   | DFun (l, e) ->
       "DFun (" ^ 
       "[" ^ (String.concat "; " l) ^ "], " ^
-      (* (dump_dval e) *) "some stuff" ^ ")\n"
+      (* (dump_dval e) *) "some stuff" ^ ")"
   | _ -> failwith "DUMP FAIL"
 ;;
 
-let env = emptyenv();;
+(* let env = emptyenv();;
 let env = bind env "x" (DBigint([2;1], Positive));;
 let env = bind env "y" (DBigint([0;1], Negative));;
 sem_exp (Prod(Prod(Den "y", Den "y"), Den "y")) env;;
@@ -757,4 +765,35 @@ let fact n =
             )
        )],
        Apply(Den("fatt"),[Eint(n)])))
-    (emptyenv ());; 
+    (emptyenv ());;  *)
+
+
+(* sort a list *)
+(* Let([("insert",
+      Fun(["x";"list"],
+         Ifthenelse(Eq(Den("list"),Emptylist),
+                    Cons(Den("x"),Emptylist),
+                    Ifthenelse(Less(Den("x"),Head(Den("list"))),
+                               Cons(Den("x"),Den("list")), 
+                        Cons(Head(Den("list")),Apply(Den("insert"),[Den("x");Tail(Den("list"))]))
+                               )
+                    )
+         )
+         );
+      ("sort",
+       Fun(["y"],
+         Ifthenelse(Eq(Den("y"),Emptylist),
+                    Emptylist,                 
+                    Apply(Den("insert"),[Head(Den("y"));
+                                    Apply(Den("sort"),
+                                          [Tail(Den("y"))]
+                                         )
+                                    ]     
+                            )
+                    )
+          )
+       )
+     ],
+     Apply(Den("sort"),[Cons(Eint(3),Cons(Eint(4),Cons(Eint(1),Emptylist)))])
+    ) *)
+

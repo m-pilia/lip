@@ -12,6 +12,6 @@ let rec fold_lines acc =
 
 let _ = 
   let sprog = fold_lines "" in 
-  print_string (dump_dval (sem_exp (parse_prog sprog) (emptyenv ())))
+  print_string (dump_dval (sem_exp (parse_prog sprog) (emptyenv ())) ^ "\n")
 ;;
 
