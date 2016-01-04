@@ -1,5 +1,5 @@
 (** 
- * Interpreter with static scope rule.
+ * Interpreter with dynamic scope rule.
  *)
 
 
@@ -109,8 +109,14 @@ let applyenv (Env e) x = match e x with
  *                                      *
  * ************************************ *)
 
+
+(** 
+ * Plus and minus sign, encoded as their ASCII value minus the ASCII value of
+ * '0'.
+ *)
 let plus, minus = -5, -3
 ;;
+
 
 (** 
  * Invert a sign.
@@ -144,7 +150,10 @@ let str_to_bigint s =
 
 
 (**
- * 
+ * Convert a list of digits from a Bigint object into a corresponding DBigint 
+ * object.
+ * @param l The list of sign and digits of the Bigint object.
+ * @return The corresponding DBigint object.
  *)
 let bigint_repr l = 
   match List.rev l with
@@ -624,6 +633,11 @@ let rec sem_exp e env = match e with
        | DList l -> DList (List.tl l) (* TODO manage tl exceptions  *)
        | _           -> failwith "TODO Tail")
   | Den x -> applyenv env x
+(*       let r = applyenv env x in 
+      (match r with
+       | DInt n when n < - 5 -> failwith "stop!!"
+       | _ -> print_string (x ^ "=" ^ (dump_dval r) ^ "\n"); r
+      ) *)
   | Prod (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( * ) bmul
   | Sum  (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( + ) bsum
   | Diff (a, b) -> apply_operation (sem_exp a env) (sem_exp b env) ( - ) bsub
@@ -658,17 +672,14 @@ let rec sem_exp e env = match e with
        | DPair (a, b) -> b
        | _            -> failwith "TODO Snd")
   | Ifthenelse (i, t, f) ->
-      (match sem_exp i env, sem_exp t env, sem_exp f env with
-       | DBool i, (DInt _    as t), (DInt _    as f)   
-       | DBool i, (DBool _   as t), (DBool _   as f)    
-       | DBool i, (DBigint _ as t), (DBigint _ as f) 
-       | DBool i, (DList _   as t), (DList _   as f)   
-       | DBool i, (DPair _   as t), (DPair _   as f)   
-       | DBool i, (DFun _    as t), (DFun _    as f) -> if i then t else f 
-       | _ -> failwith "TODO Ifthenelse")
+      (* TODO check types of t and f for equality? *)
+      (match sem_exp i env with
+       | DBool i -> if i then sem_exp t env else sem_exp f env
+       | _ -> failwith "TODO Ifthenelse non-bool condition")
   | Let (l, e) -> let env = bind_ids env (List.rev l) in sem_exp e env
   | Fun (l, e) -> DFun (l, e) (* TODO parameters checking; (type inference?) *)
   | Apply (e, args) -> (* TODO type check? *)
+      (* TODO ensure deep binding *)
       (match sem_exp e env with
        | DFun (ids, e) -> sem_exp e (bind_args env ids args)
        | _ -> failwith "TODO Apply"
@@ -729,21 +740,21 @@ dump_dval (sem_exp (
 ) env);;
 
 
-(*
-let fact n = sem_exp (Let([("fatt",
-     Fun(["x"],
-         Ifthenelse(Iszero(Den("x")),
-                    Eint(1),
-                    Prod(Den("x"), 
-                         Apply(Den("fatt"),
-                               [
-                                Diff(Den("x"),
-                                     Eint(1))
-                               ])
-                          )
-                    )
-          )
-     )],
-     Apply(Den("fatt"),[Eint(n)])
-)) (emptyenv ());; 
-*)
+let fact n = 
+  sem_exp
+    (Let([("fatt",
+       Fun(["x"],
+           Ifthenelse(Iszero(Den("x")),
+                      Eint(1),
+                      Prod(Den("x"), 
+                           Apply(Den("fatt"),
+                                 [
+                                  Diff(Den("x"),
+                                       Eint(1))
+                                 ])
+                            )
+                      )
+            )
+       )],
+       Apply(Den("fatt"),[Eint(n)])))
+    (emptyenv ());; 

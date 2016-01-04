@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# Usage
+# Run the code from the file source.fn:
+#   ./run source.fn
+# Convert the code from the file source.fn and store the OCaml code in out.ml: 
+#   ./run source.fn out.ml
+
+if [ $# -eq 0 ]; then
+	echo "Missing filename argument"
+	echo "Usage: run filename [dest-filename]"
+elif [ $# -eq 1 ]; then
+	camlp4 run.cmo < "$1"
+else
+	# write the output only if the program was parsed successfully
+	if result=$(camlp4 trans.cmo < "$1"; exit ${PIPESTATUS[0]}); then
+    	echo "$result" > "$2"
+	fi
+	
+fi
