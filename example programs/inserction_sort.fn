@@ -1,0 +1,14 @@
+let insert = fun(x; l) -> 
+  if l = [] then
+    x :: []
+  else
+    if x < HD l then
+      x :: l
+    else
+      (HD l) :: (insert(x; TL l))
+and sort = fun(y) ->
+  if y = [] then
+    []
+  else
+    insert(HD y; sort(TL y))
+in sort([9; -2; 17; 23; 0; -12; 4; 6; 3])

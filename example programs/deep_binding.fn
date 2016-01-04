@@ -1,0 +1,4 @@
+let y = 1 
+and f = fun () -> y :: [] 
+and g = fun (z) -> let y = true in z()
+in g(f)
