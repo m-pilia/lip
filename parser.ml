@@ -30,7 +30,7 @@ EXTEND Gram
    * <arg list>   ::= [<exp> [; <arg list>]]
    * <cast>       ::= (big) <exp>
    * <pair>       ::= (<exp>, <exp>)
-   * <list>       ::= [] | <exp> :: <list>
+   * <list>       ::= <exp> :: <list> | <[> <arg list> <]>
    * <if>         ::= if <exp> then <exp> else <exp>
    * <function>   ::= fun (<liden list>) -> <exp>
    * <apply>      ::= <exp> (<arg list>)
@@ -40,6 +40,7 @@ EXTEND Gram
    *         | ( <exp> )
    *         | <exp> + <exp>
    *         | <exp> - <exp>
+   *         | - <exp>
    *         | <exp> * <exp>
    *         | <exp> / <exp>
    *         | <exp> % <exp>
@@ -103,6 +104,10 @@ EXTEND Gram
         -> Fun(l, e)]
   | "Apply" RIGHTA
     [ e = exp; "("; l = LIST0 SELF SEP ";"; ")" -> Apply(e, l) ]
+  | "Try" RIGHTA
+    [ "try"; e = exp; "with"; i = UIDENT; "->"; h = exp -> Try(e, i, h)]
+  | "Raise" RIGHTA
+    [ "raise"; i = UIDENT -> Raise(i)]
   ];
 
   bind:
