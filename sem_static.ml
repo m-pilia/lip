@@ -1,5 +1,7 @@
 (** 
  * Interpreter with static scope rule.
+ * The function is represented as a closure, keeping the environment
+ * at the time of the function definition.
  *)
 
 
@@ -77,7 +79,6 @@ let rec sem_exp e env = match e with
   (* TODO parameters checking; (type inference?) *)
   | Fun (l, e) -> DFun (l, e, env) 
   | Apply (e, args) -> (* TODO type check? *)
-      (* TODO ensure deep binding *)
       (match sem_exp e env with
        | DFun (ids, e, cl) -> sem_exp e (bind_args env cl ids args)
        | _ -> failwith "TODO Apply")
@@ -88,9 +89,9 @@ let rec sem_exp e env = match e with
  * Bind a list of identifiers to their values into an environment. 
  * @param env Environment where the identifiers will be binded.
  * @param l   List of couples `(i, e)` of identifiers and expressions.
- * @return    An environment containing all the bindings of `env` and where
- *            each identifier `i` in `l` is binded with the evaluation result
- *            of its coupled expression `e`.
+ * @return An environment containing all the bindings of `env` and where
+ *         each identifier `i` in `l` is binded with the evaluation result
+ *         of its coupled expression `e`.
  *)
 and bind_ids env l = match l with
   | [] -> env
@@ -100,10 +101,11 @@ and bind_ids env l = match l with
  * Evaluate a list of arguments and bind them to their identifiers into 
  * an environment. 
  * @param env  Environment for the evaluation of the arguments.
- * @param cl   Closure of the function.
+ * @param cl   Closure environment for the function.
  * @param ids  Identifiers of the arguments.
  * @param args Expressions passed to the arguments.
- * @return An environment containing the bindings for the arguments.
+ * @return An environment containing all the bindings of `cl` plus the 
+ *         bindings for the arguments.
  *)
 and bind_args env cl ids args =
   (* TODO handle exceptions from sem_exp *)
