@@ -1,0 +1,12 @@
+(* Example from the slides (lesson 11, page 11)
+ * The result should be:
+ *   14 with static scope
+ *   15 with dynamic scope and deep binding
+ *   17 with dynamic scope and shallow binding
+ *)
+let x = 4 
+and z = 0
+and f = fun(y) -> x + y
+and g = fun(h) -> let x = 7 in h(3) + x
+in 
+  let x = 5 in g(f)

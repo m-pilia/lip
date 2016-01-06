@@ -1,3 +1,6 @@
+(* Should return a list of integers if the language has dynamic scope with
+ * deep binding.
+ *)
 let y = 1 
 and f = fun () -> y :: [] 
 and g = fun (z) -> let y = true in z()

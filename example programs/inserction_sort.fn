@@ -1,3 +1,4 @@
+(* inserction sort algorithm *)
 let insert = fun(x; l) -> 
   if l = [] then
     x :: []

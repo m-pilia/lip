@@ -1,0 +1,6 @@
+(* Should return 4 if the language has static scope, 6 if it has dynamic scope
+ *)
+let x = 2 in
+  let f = fun (y) -> x + y in
+    let x = 4 in
+      f(2)
