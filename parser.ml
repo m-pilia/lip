@@ -57,7 +57,10 @@ EXTEND Gram
   [ 
     "equals" LEFTA
     [ e1 = exp; "="; e2 = exp -> Eq(e1,e2) 
-    | e1 = exp; "<"; e2 = exp -> Less(e1,e2) ]
+    | e1 = exp; "<"; e2 = exp -> Less(e1,e2) 
+    | e1 = exp; ">"; e2 = exp -> Less(e2,e1) 
+    | e1 = exp; "<="; e2 = exp -> Or(Less(e1,e2), Eq(e1,e2)) 
+    | e1 = exp; ">="; e2 = exp -> Or(Less(e2,e1), Eq(e1,e2))]
   | "Sum,Diff" LEFTA
     [ e1 = exp; "+"; e2 = exp -> Sum(e1,e2) 
     | e1 = exp; "-"; e2 = exp -> Diff(e1,e2) 
