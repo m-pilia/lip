@@ -86,6 +86,9 @@ let rec string_of_exp = function
       "Fun (" ^ string_of_string_list l ^ ", " ^ string_of_exp e ^ ")"
   | Apply (e, l) ->
       "Apply (" ^ string_of_exp e ^ ", " ^ string_of_exp_list l ^ ")"
+  | Try (e, i, h) ->
+      "Try (" ^ string_of_exp e ^ ", \"" ^ i ^ "\", " ^ string_of_exp h ^")"
+  | Raise (i) -> "Raise (\"" ^ i ^ "\")"
 
 (**
  * Convert a list of binds, expressed as couples (identifier, expression), 
