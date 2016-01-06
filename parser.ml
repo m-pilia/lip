@@ -26,6 +26,7 @@ EXTEND Gram
    * <bigint>     ::= Bigint "<int>"
    * <bool>       ::= true | false
    * <liden>      ::= [a-z][a-zA-Z]*
+   * <uiden>      ::= [A-Z][a-zA-Z]*
    * <liden list> ::= [<liden> [; <liden list>]]
    * <arg list>   ::= [<exp> [; <arg list>]]
    * <cast>       ::= (big) <exp>
@@ -34,13 +35,20 @@ EXTEND Gram
    * <if>         ::= if <exp> then <exp> else <exp>
    * <function>   ::= fun (<liden list>) -> <exp>
    * <apply>      ::= <exp> (<arg list>)
+   * <try>        ::= try <exp> with <uiden> -> <exp>
+   * <raise>      ::= raise <uiden>
    *
    * <exp> ::= <block> | <int> | <bigint> | <bool> | <cast> | <pair> | <list>
-   *         | <liden> | <if> | <fun> | <apply>
+   *         | <liden> | <if> | <fun> | <apply> | <try> | <raise>
    *         | ( <exp> )
    *         | <exp> + <exp>
    *         | <exp> - <exp>
    *         | - <exp>
+   *         | <exp> = <exp>
+   *         | <exp> < <exp>
+   *         | <exp> > <exp>
+   *         | <exp> <= <exp>
+   *         | <exp> >= <exp>
    *         | <exp> * <exp>
    *         | <exp> / <exp>
    *         | <exp> % <exp>
