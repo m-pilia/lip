@@ -75,12 +75,20 @@ let rec sem_exp e env = match e with
       (match sem_exp i env with
        | DBool i -> if i then sem_exp t env else sem_exp f env
        | _ -> failwith "TODO Ifthenelse non-bool condition")
-  | Let (l, e) -> let env = bind_ids env l in sem_exp e env
-  (* TODO parameters checking; (type inference?) *)
-  | Fun (l, e) -> DClos (l, e, env) 
-  | Apply (e, args) -> (* TODO type check? *)
+  | Let (l, e) -> 
+      (* return a closure for functional results *)
+      let env = bind_ids env l in 
       (match sem_exp e env with
-       | DClos (ids, e, cl) -> sem_exp e (bind_args env cl ids args)
+       | DFun (ids, e) -> DClos (ids, e, env)
+       | _ as d        -> d)
+  (* TODO parameters checking; (type inference?) *)
+  | Fun (l, e) -> DFun (l, e) 
+  | Apply (e, args) -> (* TODO type check? *)
+      (* evaluate closures in their own environment, and other functions
+       * in the active environment *)
+      (match sem_exp e env with
+       | DClos (ids, e, cl) -> sem_exp e (bind_args env cl  ids args)
+       | DFun  (ids, e)     -> sem_exp e (bind_args env env ids args)
        | _ -> failwith "TODO Apply")
   | Try _
   | Raise _ -> failwith "TODO unimplemented exceptions"
@@ -109,7 +117,12 @@ and bind_ids env l = match l with
  *)
 and bind_args env cl ids args =
   (* TODO handle exceptions from sem_exp *)
-  let vals = List.map (fun x -> sem_exp x env) args in
+  let vals = 
+    List.map 
+      (fun x -> match sem_exp x env with
+       | DFun(l, e) -> DClos(l, e, env) (* closure for functional args *)
+       | _ as d     -> d)
+      args in
   try
     List.fold_left2 bind cl ids vals
   with

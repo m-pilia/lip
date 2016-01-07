@@ -1,0 +1,8 @@
+(* should return 11 *)
+let h = let x = 3
+        and y = 10
+        in 
+          let x = 2
+          and g = let x = 1 and f = fun () -> x + y in f 
+            in g 
+in h() (* note: x and y are out of scope here *)

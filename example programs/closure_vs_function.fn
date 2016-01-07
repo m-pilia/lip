@@ -1,0 +1,9 @@
+(* with static scope should fail
+ * with dynamic scope should return 5, because in 
+ *   a = f() 
+ * f has not a closure, so a should be evaluated to 2 
+ *)
+let f = fun () -> x in
+  let g = fun (z) -> z and x = 2 in
+    let a = f() and x = 3 in
+      g(f)() + a 

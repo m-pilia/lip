@@ -62,7 +62,8 @@ and dval =
   | DBigint of int list * sign
   | DList   of dval list
   | DPair   of dval * dval
-  | DFun    of ide list * exp * env (* TODO make it making sense *)
+  | DClos   of ide list * exp * env
+  | DFun    of ide list * exp
 
 (** Type for the environment. *)
 and env = Env of (ide -> dval)
@@ -98,7 +99,11 @@ let rec dump_dval v = match v with
       "DPair (" ^
       (dump_dval l) ^ ", " ^
       (dump_dval r) ^ ")"
-  | DFun (l, e, cl) ->
+  | DClos (l, e, cl) ->
+      "DClos (" ^ 
+      "[" ^ (String.concat "; " l) ^ "], " ^
+      "some stuff" ^ ")"
+  | DFun (l, e) ->
       "DFun (" ^ 
       "[" ^ (String.concat "; " l) ^ "], " ^
       "some stuff" ^ ")"
