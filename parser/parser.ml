@@ -108,7 +108,7 @@ EXTEND Gram
     [ "if"; e = exp; "then"; c1 = SELF; "else"; c2 = SELF 
         -> Ifthenelse(e,c1,c2)]
   | "Let" LEFTA
-    [ "let"; l = LIST1 bind SEP "and"; "in"; e = SELF 
+    [ "let"; l = LIST0 bind SEP "and"; "in"; e = SELF 
         -> Let(l,e)]
   | "Fun" LEFTA
     [ "fun"; "("; l = LIST0 [`LIDENT x -> x] SEP ";"; ")"; "->"; e = SELF 
