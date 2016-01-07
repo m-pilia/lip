@@ -1,7 +1,7 @@
 (** 
- * Interpreter with static scope rule.
- * The function is represented as a closure, keeping the environment
- * at the time of the function definition.
+ * Interpreter with dynamic scope and deep binding of functional arguments.
+ * The functions passed as arguments are converted into closures, keeping the 
+ * environment active while binding the functional argument. 
  *)
 
 
