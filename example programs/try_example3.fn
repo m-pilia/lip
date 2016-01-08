@@ -1,0 +1,6 @@
+let f = fun () -> raise Failure
+in 
+  try 
+    if 2 + f () > 0 then false else false
+  with
+    Failure -> true
