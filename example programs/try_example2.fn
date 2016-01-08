@@ -1,0 +1,11 @@
+let z = fun () ->
+  try
+    raise Failure
+  with
+    Exception -> false
+
+in
+  try
+    z ()
+  with
+    Failure -> true
