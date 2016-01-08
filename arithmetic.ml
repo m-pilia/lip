@@ -476,6 +476,8 @@ let bmod (x, sx) (y, sy) =
  * @return A `dval` object representing the semantic of the result.
  *)
 let apply_operation a b oi ob = match a, b with
+  | DExc i, _
+  | _, DExc i -> DExc i
   | DInt a, DInt b -> DInt (oi a b)
   | DBigint (a, sa), DBigint (b, sb) ->
       let (q, s) = ob (a, sa) (b, sb) in

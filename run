@@ -15,9 +15,12 @@ else
 	if [ $1 == "static" ]; then
 		runner="run_static.cmo"
 		translator="trans_static.cmo"
-	else
+	elif [ $1 == "dynamic" ]; then
 		runner="run_dynamic.cmo"
 		translator="trans_dynamic.cmo"
+	else
+		runner="run_except.cmo"
+		translator="trans_except.cmo"
 	fi
 
 	if [ $# -lt 2 ]; then
