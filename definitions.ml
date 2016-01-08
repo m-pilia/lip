@@ -64,6 +64,7 @@ and dval =
   | DPair   of dval * dval
   | DClos   of ide list * exp * env
   | DFun    of ide list * exp
+  | DExcept of ide
 
 (** Type for the environment. *)
 and env = Env of (ide -> dval)
