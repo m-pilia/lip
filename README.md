@@ -7,7 +7,7 @@ The `parser` folder contains a camlp4 parser, useful for testing. The `run` scri
 Build and Run
 =============
 Run `make` to build the parser, then:
-* `./run static program.fn` to run the source file `program.fn` (change static with dynamic to use the dinamically scoped interpreter)
+* `./run static program.fn` to run the source file `program.fn` (change `static` with `dynamic` to use the dinamically scoped interpreter, or with `except` to use the static version of the interpreter with exception handling)
 * `./run static program.fn out.ml` to generate the OCaml code for the abstract syntax of the program and put it inside `out.ml`
 
 
