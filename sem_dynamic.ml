@@ -18,7 +18,7 @@
 let rec sem_dynamic e env = match e with
   | Eint n -> DInt n
   | Ebool b -> DBool b
-  | Bigint l -> bigint_repr l
+  | Bigint l -> let d, s = bigint_repr l in DBigint (d, s)
   | Castint n -> 
       (match sem_dynamic n env with
        | DInt n -> let v, s = cast_int n in DBigint (v, s)
@@ -30,12 +30,12 @@ let rec sem_dynamic e env = match e with
        | _          -> failwith "TODO Cons")
   | Head l -> 
       (match sem_dynamic l env with
-       | DList l -> List.hd l (* TODO handle hd exceptions *)
-       | _       -> failwith "TODO Head")
-  | Tail l       -> 
+       | DList (h :: t) -> h
+       | _              -> failwith "TODO Head")
+  | Tail l -> 
       (match sem_dynamic l env with
-       | DList l -> DList (List.tl l) (* TODO handle tl exceptions  *)
-       | _           -> failwith "TODO Tail")
+       | DList (h :: t) -> DList (t)
+       | _              -> failwith "TODO Tail")
   | Den x -> applyenv env x
   | Prod (a, b) ->
       apply_operation (sem_dynamic a env) (sem_dynamic b env) ( * ) bmul

@@ -2,11 +2,31 @@
  * Ausiliary arithmetic functions.
  *)
 
+
 (** 
- * Plus and minus sign, encoded as their ASCII value minus the ASCII value of
- * '0'.
+ * Plus and minus signs, encoded as their character numeric value minus the 
+ * character value of '0'.
  *)
-let plus, minus = -5, -3
+let plus, minus = 
+  let zero = Char.code '0' in
+  (Char.code '+') - zero, (Char.code '-') - zero
+;;
+
+
+(**
+ * Log10 of the base for the bigint arithmetics, using half of the maximum 
+ * amount of digits representable with a int value on the running machine.
+ * This is needed because in the algorithms an int value must be able to
+ * represent up to the square of any chunk of digits.
+ *)
+let log_base = int_of_float (log10 (float_of_int max_int)) / 2
+;;
+
+
+(**
+ * Base for the bigint arithmetics.
+ *)
+let base = int_of_float (10.0 ** (float_of_int log_base))
 ;;
 
 
@@ -22,37 +42,89 @@ let inv_sign s = match s with
 
 
 (**
- * Convert a string into a Bigint value.
- * @param s String formed by an optional sign ('+', '-') followed by the 
- *          succession of digits of the value.
- * @return A Bigint value corresponding to the input string.
+ * Product of two signs
+ * @param s1 Sign of the first term.
+ * @param s2 Sign of the second term.
+ * @return Positive whether the two signs are equal, negative otherwise.
  *)
-let str_to_bigint s =
-  let rec stbr i l =
-    if i < 0 then 
-      l  
-    else
-      let v = (Char.code(s.[i]) - (Char.code '0')) in
-      if (v >= 0 && v <= 9) || v = plus || v = minus then
-        stbr (i - 1) (v :: l)
-      else 
-        failwith "The bigint representation contains invalid characters" in
-  Bigint (List.rev (stbr (String.length s - 1) []))
+let sign_prod s1 s2 =
+  if s1 = s2 then Positive else Negative
 ;;
 
 
 (**
- * Convert a list of digits from a Bigint object into a corresponding DBigint 
- * object.
- * @param l The list of sign and digits of the Bigint object.
- * @return The corresponding DBigint object.
+ * Convert a string into a list for a Bigint representation.
+ * 
+ * The Bigint is represented as a list of int values, the first of whom is 
+ * the sign (may assume `plus` or `minus`) and the remaining entries represent
+ * a chunk of `log_base` digits each. The list is big-endian and the first
+ * chunk contains the least significative digits.
+ *
+ * If the list elements for the digits are `d0` ... `dn`, the represented 
+ * value is equal to: 
+ *   `d0` * 10^(`log_base` * 0) + ... + `dn` * 10^(`log_base` * n)
+ *
+ * @param s String formed by an optional sign ('+', '-') followed by the 
+ *          succession of digits of the value.
+ * @return A list corresponding to the input string with the Bigint 
+ *         representation.
+ *)
+let str_to_bigint_list s =
+  try
+    (* Determine the starting index for the digits, the length of the 
+     * digits block and the sign of the number. *)
+    let sign, start, len =
+      let l = String.length s in
+      match Char.code (s.[0]) - (Char.code '0') with
+      | n when n >= 0 && n <= 9 -> plus,  0, l
+      | n when n = plus         -> plus,  1, l - 1
+      | n when n = minus        -> minus, 1, l - 1
+      | _                       -> failwith "TODO str_to_bigint_list" in
+
+    (* Determine the number of list items needed to represent the digits. *)
+    let n = len / log_base in
+
+    (* If the len / log_base has a non null remainder, there are extra digits
+     * in the most significative end to be parsed first. *)
+    let start, l = 
+      let len_rem = len mod log_base in
+      if len_rem = 0 then
+        start, []
+      else
+        start + len_rem, [int_of_string (String.sub s start len_rem)] in
+
+    (* Parse the digits in blocks of `log_base` length. *)
+    let rec stbr l k =
+      if k >= n then 
+        l  
+      else
+        let substr = String.sub s (start + k * log_base) log_base in
+        stbr ((int_of_string substr) :: l) (k + 1) in
+
+    (* Return a Bigint object representing the number. *)
+    sign :: (stbr l 0)
+
+  with
+  |  Failure _ -> 
+      failwith "The bigint representation contains invalid characters" 
+  |  Invalid_argument _ ->
+      failwith "The bigint representation is invalid"
+;;
+
+
+(**
+ * Convert a list from a Bigint object into a pair containing the list of 
+ * digit chunks and the sign object. 
+ * @param l The list from a Bigint object.
+ * @return A couple (`l`, `s`) where `l` is the list of the digits forming n
+ *         and `s` is the sign object.
  *)
 let bigint_repr l = 
-  match List.rev l with
-  | [] -> DBigint ([], Positive)
-  | h :: t when h = minus -> DBigint (List.rev t, Negative)
-  | h :: t when h = plus  -> DBigint (List.rev t, Positive)
-  | h :: t when h >= 0 && h <= 9 -> DBigint (List.rev (h :: t), Positive)
+  match l with
+  | []                    -> [], Positive
+  | h :: t when h = minus -> t, Negative
+  | h :: t when h = plus  -> t, Positive
+  | h :: t when h >= 0    -> h :: t, Positive
   | _ -> failwith "TODO bigint representation conversion";
 ;;
 
@@ -61,14 +133,12 @@ let bigint_repr l =
  * Return the list of the digits forming the input integer value. The list
  * goes from the least to most significative digit.
  * @param n Integer value.
- * @return A list of the digits forming n.
+ * @return A couple (`l`, `s`) where `l` is the list of the digits forming n
+ *         and `s` is the sign object.
  *)
 let cast_int n =
-  let sign = if n >= 0 then Positive else Negative in
-  let n = abs n in
-  let rec cintr n l =
-    if n < 10 then List.rev (n :: l) else cintr (n / 10) ((n mod 10) :: l) in
-  cintr n [], sign
+  (* NOTE: an int value may exceed a single digit chunk. *)
+  bigint_repr (str_to_bigint_list (string_of_int n))
 ;;
 
 
@@ -151,7 +221,7 @@ let rec zero_trim x =
 
 
 (**
- * Sum two positive integers expressed as lists of digits.
+ * Sum two positive integers expressed as lists of digit chunks.
  * @param a First addend.
  * @param b Second addend.
  * @return The a + b sum.
@@ -161,7 +231,7 @@ let rec bsump a b =
    * @param a   Digits of the first addend to be consumed.
    * @param b   Digits of the second addend to be consumed.
    * @param sum Sum of the consumed digits.
-   * @param c   Carry of the last digit addition.
+   * @param c   Carry of the last digit chunks addition.
    * @return The a + b sum when all the input digits have been consumed.
    *)
   let rec bsumr a b sum c = match a, b with
@@ -178,13 +248,13 @@ let rec bsump a b =
           (List.rev sum) @ (bsumr x [c] [] 0)
     | ha :: ta, hb :: tb ->
         let s = ha + hb + c in
-        bsumr ta tb ((s mod 10) :: sum) (s / 10) in
+        bsumr ta tb ((s mod base) :: sum) (s / base) in
   zero_trim (bsumr a b [] 0)
 ;;
 
 
 (** 
- * Subtract two positive integers expressed as lists of digits.
+ * Subtract two positive integers expressed as lists of digit chunks.
  * @param a Minuend.
  * @param b Subtraend.
  * @return The a - b subtraction.
@@ -194,7 +264,7 @@ let bsubp a b =
    * @param a   Digits of the first term to be consumed.
    * @param b   Digits of the second term to be consumed.
    * @param sum Subtraction of the consumed digits.
-   * @param c   Carry of the last digit subtraction.
+   * @param c   Carry of the last digit chunks subtraction.
    * @return The a - b subtraction when all the input digits have been consumed.
    *)
   let rec bsubr a b sub c = match a, b with
@@ -209,7 +279,7 @@ let bsubp a b =
     | ha :: ta, hb :: tb ->
         let s = ha - hb - c in
         let c = if s < 0 then 1 else 0 in
-        let s = if s < 0 then 10 + s else s in
+        let s = if s < 0 then base + s else s in
         bsubr ta tb (s :: sub) c
     | _ -> failwith ("Second term smaller than first " ^ 
                     (string_of_int (List.length a)) ^ 
@@ -220,25 +290,23 @@ let bsubp a b =
 
 
 (** 
- * Sum two Bigint values, represented as lists of digits.
+ * Sum two Bigint values, represented as lists of digit chunks.
  * @param a  First addend (list of int digits).
  * @param sa First addend's sign.
  * @param b  Second addend (list of int digits).
  * @param sb Second addend's sign.
  * @return The a + b sum represented as a list of digits.
  *)
-let bsum (a, sa) (b, sb) = match sa, sb with
-  | Positive, Positive
-  | Negative, Negative -> bsump a b, sa 
-  | Positive, Negative  
-  | Negative, Positive -> 
+let bsum (a, sa) (b, sb) = match sign_prod sa sb with
+  | Positive -> bsump a b, sa 
+  | Negative -> 
       let (big, sbig), (small, ssmall) = bsortabs (a, sa) (b, sb) in
       bsubp big small, sbig
 ;;
 
 
 (** 
- * Subtraction of two Bigint values, represented as lists of digits.
+ * Subtraction of two Bigint values, represented as lists of digit chunks.
  * @param a  Minuend (list of int digits).
  * @param sa Minuend's sign.
  * @param b  Subtraend (list of int digits).
@@ -251,7 +319,7 @@ let bsub (a, sa) (b, sb) =
 
 
 (** 
- * Split a list into a couple of lists, with the first containing n elements.
+ * Split a list into a couple of lists, with the first containing `n` elements.
  * @param n Number of elements to be contained in the first list.
  * @param l List to be split.
  * @return A couple (l1, l2) of lists such that 
@@ -270,7 +338,7 @@ let split n l =
 
 (** 
  * Product of two Bigint values, represented as lists of digits, using the
- * naive multiplication algorithm. 
+ * naive (or long multiplication) algorithm. 
  * Representing the two factors as sequences of digits
  *   a = a_m :: ... :: a_1 :: a_0 :: []
  *   b = b_n :: ... :: b_1 :: b_0 :: []
@@ -296,7 +364,8 @@ let bmul_naive (a, sa) (b, sb) =
     | []     -> List.rev (if c = 0 then r else c :: r)
     | h :: t -> 
         let p = h * y + c in
-        let r, c = if p < 10 then p :: r, 0 else (p mod 10) :: r, p / 10 in
+        let r, c = 
+          if p < base then p :: r, 0 else (p mod base) :: r, p / base in
         row r y c t in 
 
   (** 
@@ -313,10 +382,7 @@ let bmul_naive (a, sa) (b, sb) =
         let k = 0 :: k in
         acc k r t in
 
-  let sign = match sa, sb with
-    | Positive, Positive
-    | Negative, Negative -> Positive
-    | _                  -> Negative in
+  let sign = sign_prod sa sb in
 
   match a, b with
   | [0], _
@@ -330,8 +396,8 @@ let bmul_naive (a, sa) (b, sb) =
 
 
 (** 
- * Product of two Bigint values, represented as lists of digits, using the
- * Karatsuba multiplication algorithm.
+ * Product of two Bigint values, represented as lists of digit chunks, using 
+ * the Karatsuba multiplication algorithm.
  * Representing the two factors as 
  *   {% x = x_1 * 10^m + x_2 %}
  *   {% y = y_1 * 10^m + y_2 %}
@@ -375,10 +441,7 @@ let bmul (x, sx) (y, sy) =
       let b = bsubp (mulr (bsump x1 x2) (bsump y1 y2)) (bsump a c) in
       bsump (zeros (2 * m) @ a) (bsump (zeros m @ b) c) in
 
-  let sign = match sx, sy with
-    | Positive, Positive
-    | Negative, Negative -> Positive
-    | _                  -> Negative in
+  let sign = sign_prod sx sy in
 
   match x, y with
   | [], _
@@ -402,7 +465,7 @@ let bmul (x, sx) (y, sy) =
  *)
 let bdiv_naive (x, sx) (y, sy) =
   (**
-   * Division of `a` by `y` when `a` is less than ten times `y`.
+   * Division of `a` by `y` when `a` is less than `base` times `y`.
    * @param a Dividend.
    * @return A couple `(q, r)` containing quotient and remainder.
    *)
@@ -429,13 +492,14 @@ let bdiv_naive (x, sx) (y, sy) =
         let d, a = divide a in
         divr (d :: q) a t in
   
-  let sign = match sx, sy with
-    | Positive, Positive
-    | Negative, Negative -> Positive
-    | _                  -> Negative in
+  let sign = sign_prod sx sy in 
   
-  let q, r = divr [] [] (List.rev x) in
-  (q, sign), (r, sign)
+  match zero_trim y with
+  | []
+  | [0] -> failwith "divide by zero"
+  | _   ->
+      let q, r = divr [] [] (List.rev x) in
+      (q, sign), (r, sx) (* the remainder keeps the dividend sign *)
 ;;
 
 

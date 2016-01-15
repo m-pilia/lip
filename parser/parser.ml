@@ -14,7 +14,7 @@ EXTEND Gram
    *)
   exp_eoi: 
   [ 
-    [ e = exp; EOI -> e ] 
+    [ e = exp; `EOI -> e ] 
   ];
 
   (* BNF syntax for the language.
@@ -97,7 +97,7 @@ EXTEND Gram
   | "Values"
     [ `INT(i,_) -> Eint(i) 
     | `LIDENT x -> Den(x) 
-    | "Bigint"; i = STRING -> str_to_bigint i
+    | "Bigint"; i = STRING -> Bigint(str_to_bigint_list i)
     | "true"  -> Ebool(true)
     | "false" -> Ebool(false)
     | "("; e = SELF; ")" -> e 

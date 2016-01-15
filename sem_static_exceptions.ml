@@ -22,7 +22,7 @@ exception BindException of dval
 let rec sem_static e env = match e with
   | Eint n -> DInt n
   | Ebool b -> DBool b
-  | Bigint l -> bigint_repr l
+  | Bigint l -> let d, s = bigint_repr l in DBigint (d, s)
   | Castint n -> 
       (match sem_static n env with
        | DInt n -> let v, s = cast_int n in DBigint (v, s)
@@ -37,14 +37,14 @@ let rec sem_static e env = match e with
        | _          -> failwith "TODO Cons")
   | Head l -> 
       (match sem_static l env with
-       | DExc i  -> DExc i
-       | DList l -> List.hd l (* TODO handle hd exceptions *)
-       | _       -> failwith "TODO Head")
-  | Tail l       -> 
+       | DExc i         -> DExc i
+       | DList (h :: t) -> h
+       | _              -> failwith "TODO Head")
+  | Tail l -> 
       (match sem_static l env with
-       | DExc i  -> DExc i
-       | DList l -> DList (List.tl l) (* TODO handle tl exceptions  *)
-       | _       -> failwith "TODO Tail")
+       | DExc i         -> DExc i
+       | DList (h :: t) -> DList (t)
+       | _              -> failwith "TODO Tail")
   | Den x -> applyenv env x
   | Prod (a, b) ->
       apply_operation (sem_static a env) (sem_static b env) ( * ) bmul
