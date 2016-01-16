@@ -22,20 +22,24 @@ let rec sem_dynamic e env = match e with
   | Castint n -> 
       (match sem_dynamic n env with
        | DInt n -> let v, s = cast_int n in DBigint (v, s)
-       | _      -> failwith "TODO Castint")
+       | _      -> failwith "Castint: invalid operand type")
   | Emptylist -> DList ([])
   | Cons (e, l) -> 
       (match sem_dynamic e env, sem_dynamic l env with
-       | e, DList l -> DList (e :: l) (* TODO does it need type check? *)
-       | _          -> failwith "TODO Cons")
+       | e, (DList l as ll) -> 
+           if (TList (type_repr e)) === (type_repr ll) then
+             DList (e :: l)
+           else
+             failwith "Cons: mismatching type"
+       | _          -> failwith "Cons: invalid operand type, not a list")
   | Head l -> 
       (match sem_dynamic l env with
        | DList (h :: t) -> h
-       | _              -> failwith "TODO Head")
+       | _              -> failwith "Head: invalid operand type, not a list")
   | Tail l -> 
       (match sem_dynamic l env with
        | DList (h :: t) -> DList (t)
-       | _              -> failwith "TODO Tail")
+       | _              -> failwith "Tail: invalid operand type, not a list")
   | Den x -> applyenv env x
   | Prod (a, b) ->
       apply_operation (sem_dynamic a env) (sem_dynamic b env) ( * ) bmul
@@ -51,52 +55,51 @@ let rec sem_dynamic e env = match e with
       (match sem_dynamic a env, sem_dynamic b env with
        | DInt a, DInt b -> DBool (a < b)
        | DBigint (a, sa), DBigint (b, sb) -> DBool (bless (a, sa) (b, sb))
-       | _ -> failwith "TODO Less")
+       | _ -> failwith "Less: invalid operand type")
   | Eq (a, b) -> DBool ((sem_dynamic a env) = (sem_dynamic b env))
   | Iszero e -> sem_dynamic (Or (Eq (e, Eint 0), Eq (e, Bigint ([0])))) env
   | Or (a, b) ->
       (match sem_dynamic a env, sem_dynamic b env with
        | DBool a, DBool b -> DBool (a || b)
-       | _                -> failwith "TODO Or")
+       | _                -> failwith "Or: invalid operand type")
   | And (a, b) ->
       (match sem_dynamic a env, sem_dynamic b env with
        | DBool a, DBool b -> DBool (a && b)
-       | _                -> failwith "TODO And")
+       | _                -> failwith "And: invalid operand type")
   | Not e ->
       (match sem_dynamic e env with
        | DBool a -> DBool (not a)
-       | _       -> failwith "TODO Not")
+       | _       -> failwith "Not: invalid operand type")
   | Pair (a, b) -> DPair (sem_dynamic a env, sem_dynamic b env)
   | Fst e ->
       (match sem_dynamic e env with
        | DPair (a, b) -> a
-       | _            -> failwith "TODO Fst")
+       | _            -> failwith "Fst: invalid operand type")
   | Snd e ->
       (match sem_dynamic e env with
        | DPair (a, b) -> b
-       | _            -> failwith "TODO Snd")
+       | _            -> failwith "Snd: invalid operand type")
   | Ifthenelse (i, t, f) ->
-      (* TODO need to check types of t and f for equality? *)
       (match sem_dynamic i env with
        | DBool i -> if i then sem_dynamic t env else sem_dynamic f env
-       | _ -> failwith "TODO Ifthenelse non-bool condition")
+       | _ -> failwith "Ifthenelse: non-bool condition")
   | Let (l, e) -> 
       (* return a closure for functional results *)
       let env = bind_ids env l in 
       (match sem_dynamic e env with
        | DFun (ids, e) -> DClos (ids, e, env)
        | _ as d        -> d)
-  (* TODO parameters checking; (type inference?) *)
   | Fun (l, e) -> DFun (l, e) 
-  | Apply (e, args) -> (* TODO type check? *)
+  | Apply (e, args) ->
       (* evaluate closures in their own environment, and other functions
        * in the active environment *)
       (match sem_dynamic e env with
        | DClos (ids, e, cl) -> sem_dynamic e (bind_args env cl  ids args)
        | DFun  (ids, e)     -> sem_dynamic e (bind_args env env ids args)
-       | _ -> failwith "TODO Apply")
+       | _ -> failwith "Apply: cannot apply non-functional argument")
   | Try _
-  | Raise _ -> failwith "TODO unimplemented exceptions"
+  | Raise _ -> failwith ("Exceptions are not implemented here, " ^ 
+                         "see sem_static_exceptions.ml")
 
 (** 
  * Bind a list of identifiers to their values into an environment. 
@@ -121,7 +124,6 @@ and bind_ids env l = match l with
  *         bindings for the arguments.
  *)
 and bind_args env cl ids args =
-  (* TODO handle exceptions from sem_dynamic *)
   let vals = 
     List.map 
       (fun x -> match sem_dynamic x env with
@@ -131,7 +133,7 @@ and bind_args env cl ids args =
   try
     List.fold_left2 bind cl ids vals
   with
-  | Invalid_argument m -> failwith "Mismatching function arguments"
-  | _                  -> failwith "TODO"
+  | Invalid_argument _ 
+  | _                  -> failwith "Mismatching function arguments"
 ;;
 

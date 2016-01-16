@@ -552,5 +552,5 @@ let apply_operation a b oi ob = match a, b with
   | DInt a, DBigint (b, sb) ->
       let (q, s) = ob (cast_int a) (b, sb) in
       DBigint (q, s)
-  | _ -> failwith "TODO artithmetic operation"
+  | _ -> failwith "Invalid operand type"
 ;;

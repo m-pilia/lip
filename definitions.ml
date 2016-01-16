@@ -15,7 +15,7 @@ type ide = string
 ;; 
 
 
-(** Type for a sign. *)
+(** Type for the sign. *)
 type sign =
   | Positive
   | Negative
@@ -71,10 +71,62 @@ and env = Env of (ide -> dval)
 ;;
 
 
+(** 
+ * Type to denote types of objects in the semantic domain of the 
+ * environment.
+ *)
+type _type = 
+    TInteger 
+  | TBiginteger 
+  | TBoolean 
+  | TException 
+  | TEmptylist
+  | TList of _type 
+  | TPair of _type * _type
+  | TFunction
+;;
+
+
+(**
+ * Return the type of an environment object.
+ * @param v Object of type `dval`.
+ * @return Type of `v`, expressed with a `_type` object.
+ *)
+let rec type_repr v = match v with
+  | DInt _         -> TInteger
+  | DBool _        -> TBoolean
+  | DBigint _      -> TBiginteger
+  | DList ([])     -> TEmptylist
+  | DList (h :: t) -> TList (type_repr h)
+  | DPair (l, r)   -> TPair (type_repr l, type_repr r)
+  | DClos _        
+  | DFun _         -> TFunction
+  | DExc _         -> TException 
+  | Unbound        -> failwith "Invalid object"
+;;
+
+
+(**
+ * Check two types for equality.
+ * Two types are equals if they are the same type, or if one is a list of any
+ * type and the other is an empty list.
+ * @param l Left operand.
+ * @param r Right operand.
+ * @return True if the two operands have the same type, false otherwise.
+ *)
+let ( === ) l r =
+  l = r ||
+  match l, r with
+  | TList _, TEmptylist
+  | TEmptylist, TList _ -> true
+  | _                   -> false
+;;
+
+
 (**
  * Generate a list in abstract syntax from an OCaml list.
  * @param l List of exp elements.
- * @return A Cons object containing the elements from `l`.
+ * @return A `Cons` object containing the elements from `l`.
  *)
 let rec cons_of_list = function
   | []     -> Emptylist
@@ -83,7 +135,9 @@ let rec cons_of_list = function
 
 
 (**
- *
+ * Convert a `dval` object into a string.
+ * @param v A `dval` object.
+ * @return The string representation of `v`.
  *)
 let rec dump_dval v = match v with
   | DInt n -> Printf.sprintf "DInt (%d)" n
@@ -125,6 +179,14 @@ let rec dump_dval v = match v with
  * from an environment.
  *)
 exception UnboundException of ide
+;;
+
+
+(**
+ * Exception risen when the evaluation of an argument during a bind operation
+ * returns an exception.
+ *)
+exception BindException of dval
 ;;
 
 

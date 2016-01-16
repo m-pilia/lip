@@ -22,20 +22,24 @@ let rec sem_static e env = match e with
   | Castint n -> 
       (match sem_static n env with
        | DInt n -> let v, s = cast_int n in DBigint (v, s)
-       | _      -> failwith "TODO Castint")
+       | _      -> failwith "Castint: invalid operand type")
   | Emptylist -> DList ([])
   | Cons (e, l) -> 
       (match sem_static e env, sem_static l env with
-       | e, DList l -> DList (e :: l) (* TODO need type check *)
-       | _          -> failwith "TODO Cons")
+       | e, (DList l as ll) -> 
+           if (TList (type_repr e)) === (type_repr ll) then
+             DList (e :: l)
+           else
+             failwith "Cons: mismatching list type"
+       | _          -> failwith "Cons: invalid operand type, not a list")
   | Head l -> 
       (match sem_static l env with
        | DList (h :: t) -> h
-       | _              -> failwith "TODO Head")
+       | _              -> failwith "Head: invalid operand type, not a list")
   | Tail l -> 
       (match sem_static l env with
        | DList (h :: t) -> DList (t)
-       | _              -> failwith "TODO Tail")
+       | _              -> failwith "Tail: invalid operand type, not a list")
   | Den x -> applyenv env x
   | Prod (a, b) -> 
       apply_operation (sem_static a env) (sem_static b env) ( * ) bmul
@@ -51,44 +55,43 @@ let rec sem_static e env = match e with
       (match sem_static a env, sem_static b env with
        | DInt a, DInt b -> DBool (a < b)
        | DBigint (a, sa), DBigint (b, sb) -> DBool (bless (a, sa) (b, sb))
-       | _ -> failwith "TODO Less")
+       | _ -> failwith "Less: invalid operand type")
   | Eq (a, b) -> DBool ((sem_static a env) = (sem_static b env))
   | Iszero e -> sem_static (Or (Eq (e, Eint 0), Eq (e, Bigint ([0])))) env
   | Or (a, b) ->
       (match sem_static a env, sem_static b env with
        | DBool a, DBool b -> DBool (a || b)
-       | _                -> failwith "TODO Or")
+       | _                -> failwith "Or: invalid operand type")
   | And (a, b) ->
       (match sem_static a env, sem_static b env with
        | DBool a, DBool b -> DBool (a && b)
-       | _                -> failwith "TODO And")
+       | _                -> failwith "And: invalid operand type")
   | Not e ->
       (match sem_static e env with
        | DBool a -> DBool (not a)
-       | _       -> failwith "TODO Not")
+       | _       -> failwith "Not: invalid operand type")
   | Pair (a, b) -> DPair (sem_static a env, sem_static b env)
   | Fst e ->
       (match sem_static e env with
        | DPair (a, b) -> a
-       | _            -> failwith "TODO Fst")
+       | _            -> failwith "Fst: invalid operand type")
   | Snd e ->
       (match sem_static e env with
        | DPair (a, b) -> b
-       | _            -> failwith "TODO Snd")
+       | _            -> failwith "Snd: invalid operand type")
   | Ifthenelse (i, t, f) ->
-      (* TODO need to check types of t and f for equality? *)
       (match sem_static i env with
        | DBool i -> if i then sem_static t env else sem_static f env
-       | _ -> failwith "TODO Ifthenelse non-bool condition")
+       | _ -> failwith "Ifthenelse: non-bool condition")
   | Let (l, e) -> let env = bind_ids env l in sem_static e env
-  (* TODO parameters checking; (type inference?) *)
   | Fun (l, e) -> DClos (l, e, env) 
-  | Apply (e, args) -> (* TODO type check? *)
+  | Apply (e, args) ->
       (match sem_static e env with
        | DClos (ids, e, cl) -> sem_static e (bind_args env cl ids args)
-       | _ -> failwith "TODO Apply")
+       | _ -> failwith "Apply: cannot apply non-functional argument")
   | Try _
-  | Raise _ -> failwith "TODO unimplemented exceptions"
+  | Raise _ -> failwith ("Exceptions are not implemented here, " ^ 
+                         "see sem_static_exceptions.ml")
 
 (** 
  * Bind a list of identifiers to their values into an environment. 
@@ -113,12 +116,11 @@ and bind_ids env l = match l with
  *         bindings for the arguments.
  *)
 and bind_args env cl ids args =
-  (* TODO handle exceptions from sem_static *)
   let vals = List.map (fun x -> sem_static x env) args in
   try
     List.fold_left2 bind cl ids vals
   with
-  | Invalid_argument m -> failwith "Mismatching function arguments"
-  | _                  -> failwith "TODO"
+  | Invalid_argument _ 
+  | _                  -> failwith "Mismatching function arguments"
 ;;
 
