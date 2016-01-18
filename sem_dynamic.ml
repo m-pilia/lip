@@ -35,10 +35,12 @@ let rec sem_dynamic e env = match e with
   | Head l -> 
       (match sem_dynamic l env with
        | DList (h :: t) -> h
+       | DList ([])     -> failwith "Head: empty list"
        | _              -> failwith "Head: invalid operand type, not a list")
   | Tail l -> 
       (match sem_dynamic l env with
        | DList (h :: t) -> DList (t)
+       | DList ([])     -> failwith "Tail: empty list"
        | _              -> failwith "Tail: invalid operand type, not a list")
   | Den x -> applyenv env x
   | Prod (a, b) ->
