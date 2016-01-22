@@ -104,10 +104,17 @@ let rec sem_static e env = match e with
        | DExc _ as exc -> exc
        | _             -> failwith "Snd: invalid operand type")
   | Ifthenelse (i, t, f) ->
-      (match sem_static i env with
-       | DBool i       -> if i then sem_static t env else sem_static f env
-       | DExc _ as exc -> exc
-       | _ -> failwith "Ifthenelse: non-bool condition")
+      (* it is safe to evaluate both the branches because no recursion is
+       * allowed in the statically scoped language *)
+      let tsem, fsem = sem_static t env, sem_static f env in
+      (* type check of the branch expressions *)
+      if (type_repr tsem) === (type_repr fsem) then
+        (match sem_static i env with
+         | DBool i -> if i then tsem else fsem
+         | DExc _ as exc -> exc
+         | _ -> failwith "Ifthenelse: non-bool condition")
+      else                               
+        failwith "Ifthenelse: type mismatch"
   | Let (l, e) -> 
       (try
          let env = bind_ids env l in sem_static e env
@@ -124,10 +131,17 @@ let rec sem_static e env = match e with
        | DExc _ as exc      -> exc
        | _ -> failwith "Apply: cannot apply non-functional argument")
   | Try (e, i, h) -> 
-      (match sem_static e env with
-       | DExc x when x = i -> sem_static h env
-       | DExc x as exc     -> exc
-       | _ as res          -> res)
+      (* it is safe to evaluate both the branches because no recursion is
+       * allowed in the language *)
+      let esem, hsem = sem_static e env, sem_static h env in
+      (* type check of the branch expressions *)
+      if (type_repr esem) === (type_repr hsem) then
+        (match esem with
+         | DExc x when x = i -> hsem
+         | DExc x as exc     -> exc
+         | _ as res          -> res)
+      else                               
+        failwith "Try: type mismatch"
   | Raise i -> DExc i
 
 (** 

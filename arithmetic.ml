@@ -496,10 +496,11 @@ let bdiv_naive (x, sx) (y, sy) =
   
   match zero_trim y with
   | []
-  | [0] -> failwith "divide by zero"
+  | [0] -> failwith "division or modulo by zero"
+  | [1] -> (x, sign), ([0], sx)
   | _   ->
       let q, r = divr [] [] (List.rev x) in
-      (q, sign), (r, sx) (* the remainder keeps the dividend sign *)
+      (q, sign), (r, sx) (* the remainder keeps the dividend's sign *)
 ;;
 
 
@@ -552,5 +553,6 @@ let apply_operation a b oi ob = match a, b with
   | DInt a, DBigint (b, sb) ->
       let (q, s) = ob (cast_int a) (b, sb) in
       DBigint (q, s)
-  | _ -> failwith "Invalid operand type"
+  | _ -> failwith "Arithmetic operation: Invalid operand type"
 ;;
+

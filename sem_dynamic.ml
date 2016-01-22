@@ -82,9 +82,13 @@ let rec sem_dynamic e env = match e with
        | DPair (a, b) -> b
        | _            -> failwith "Snd: invalid operand type")
   | Ifthenelse (i, t, f) ->
-      (match sem_dynamic i env with
-       | DBool i -> if i then sem_dynamic t env else sem_dynamic f env
-       | _ -> failwith "Ifthenelse: non-bool condition")
+      (* type check of the branch expressions *)
+      if (type_exp t env) =~= (type_exp f env) then
+        (match sem_dynamic i env with
+         | DBool i -> if i then sem_dynamic t env else sem_dynamic f env
+         | _ -> failwith "Ifthenelse: non-bool condition")
+      else
+        failwith "Ifthenelse: type mismatch"
   | Let (l, e) -> 
       (* return a closure for functional results *)
       let env = bind_ids env l in 

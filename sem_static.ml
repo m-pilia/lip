@@ -82,9 +82,16 @@ let rec sem_static e env = match e with
        | DPair (a, b) -> b
        | _            -> failwith "Snd: invalid operand type")
   | Ifthenelse (i, t, f) ->
-      (match sem_static i env with
-       | DBool i -> if i then sem_static t env else sem_static f env
-       | _ -> failwith "Ifthenelse: non-bool condition")
+      (* it is safe to evaluate both the branches because no recursion is
+       * allowed in the statically scoped language *)
+      let tsem, fsem = sem_static t env, sem_static f env in
+      (* type check of the branch expressions *)
+      if (type_repr tsem) === (type_repr fsem) then
+        (match sem_static i env with
+         | DBool i -> if i then tsem else fsem
+         | _ -> failwith "Ifthenelse: non-bool condition")
+      else
+        failwith "Ifthenelse: type mismatch"
   | Let (l, e) -> let env = bind_ids env l in sem_static e env
   | Fun (l, e) -> DClos (l, e, env) 
   | Apply (e, args) ->
