@@ -63,7 +63,10 @@ EXTEND Gram
    *)
   exp: 
   [ 
-    "equals" LEFTA
+    "And,Or" LEFTA
+    [ e1 = exp; "&&"; e2 = exp -> And(e1,e2) 
+    | e1 = exp; "||"; e2 = exp ->  Or(e1,e2) ]
+  | "equals" LEFTA
     [ e1 = exp; "="; e2 = exp -> Eq(e1,e2) 
     | e1 = exp; "<"; e2 = exp -> Less(e1,e2) 
     | e1 = exp; ">"; e2 = exp -> Less(e2,e1) 
@@ -73,9 +76,6 @@ EXTEND Gram
     [ e1 = exp; "+"; e2 = exp -> Sum(e1,e2) 
     | e1 = exp; "-"; e2 = exp -> Diff(e1,e2) 
     | "-"; e = exp -> Diff(Eint 0, e)]
-  | "And,Or" LEFTA
-    [ e1 = exp; "&&"; e2 = exp -> And(e1,e2) 
-    | e1 = exp; "||"; e2 = exp ->  Or(e1,e2) ]
   | "Prod,Div,Mod" LEFTA
     [ e1 = exp; "*"; e2 = exp -> Prod(e1,e2) 
     | e1 = exp; "/"; e2 = exp -> Div(e1,e2) 
