@@ -1,0 +1,17 @@
+(* program to generate Bell numbers *)
+let fact = fun (n) -> if n = 0 then 1 else n * fact(n - 1)
+and binom = fun (n; k) -> fact (n) / (fact (k) * fact (n - k))
+and sum = fun (f; n0; n) ->
+    if n = n0 then
+        f(n)
+    else
+        f(n) + sum(f; n0; n - 1)
+and bell = fun (n) -> 
+    if n = 0 then
+        1
+    else
+        let f = fun (i) -> binom(n - 1; i) * bell(i) in
+        sum(f; 0; n - 1)
+in bell(6)
+
+

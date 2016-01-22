@@ -1,0 +1,7 @@
+(* program to generate Pell numbers *)
+let pell = fun (n) ->
+    if n = 0 || n = 1 then
+        n
+    else
+        2 * pell(n - 1) + pell(n - 2)
+in pell(7)

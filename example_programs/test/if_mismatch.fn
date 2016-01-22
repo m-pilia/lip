@@ -1,0 +1,7 @@
+let f = fun (x) ->
+  if x = 0 then
+    [(true, true)]
+  else
+    [(true, 1)]
+in
+  f (5)

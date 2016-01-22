@@ -1,0 +1,6 @@
+(* should return true *)
+let x = 10 in
+  try
+    let y = 5 in if x + y > 15 then false else raise Exception
+  with
+    Exception -> true

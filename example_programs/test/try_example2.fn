@@ -1,3 +1,4 @@
+(* should return true *)
 let z = fun () ->
   try
     raise Failure
