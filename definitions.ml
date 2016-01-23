@@ -1,5 +1,5 @@
 (** 
- * Shared type definitions.
+ * Definitions of shared types and functions.
  *)
  
 
@@ -54,17 +54,38 @@ type exp =
   | Try        of exp * ide * exp        (** Exception guard. *)
   | Raise      of ide                    (** Raise an exception. *)
 
-(** Semantic domain for the environment. *)
+(** 
+ * Semantic domain for the environment.
+ *
+ * ## Bigint
+ *
+ * The big integer is represented as a couple of a list of digit chunks and a 
+ * sign. Each chunk contains `log_base` digits each. The head of the list 
+ * contains the chunk with the least significative digits, and each following 
+ * chunk contains digits more significative than the preceeding. Each chunk of
+ * digits is represented as an integer value.
+ *
+ * If the list elements for the digits are `d0` ... `dn`, the represented 
+ * value is equal to: 
+ *   `d0` * 10^(`log_base` * 0) + ... + `dn` * 10^(`log_base` * n)
+ *
+ *
+ * ## Functions and closures
+ *
+ * A function is represented as a list of identifiers for its parameters and
+ * an expression. A closure adds an environment for the evaluation of the 
+ * expression.
+ *)
 and dval =
   | Unbound
-  | DInt    of int
-  | DBool   of bool
-  | DBigint of int list * sign
-  | DList   of dval list
-  | DPair   of dval * dval
-  | DClos   of ide list * exp * env
-  | DFun    of ide list * exp
-  | DExc    of ide
+  | DInt    of int                  (** Integer value. *)
+  | DBool   of bool                 (** Boolean value. *)
+  | DBigint of int list * sign      (** Big integer value. *)
+  | DList   of dval list            (** List value. *)
+  | DPair   of dval * dval          (** Pair value. *)
+  | DClos   of ide list * exp * env (** Closure value. *)
+  | DFun    of ide list * exp       (** Function value. *)
+  | DExc    of ide                  (** Exception value. *)
 
 (** Type for the environment. *)
 and env = Env of (ide -> dval)

@@ -2,6 +2,9 @@
  * Interpreter with static scope rule.
  * The function is represented as a closure, keeping the environment
  * at the time of the function definition.
+ *
+ * Detailed documentation for each feature is provided along type and function 
+ * definitions in the `definitions.ml` and `arithmetic.ml` files.
  *)
 
 

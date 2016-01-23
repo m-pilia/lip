@@ -2,6 +2,9 @@
  * Interpreter with dynamic scope and deep binding of functional arguments.
  * The functions passed as arguments are converted into closures, keeping the 
  * environment active while binding the functional argument. 
+ *
+ * Detailed documentation for each feature is provided along type and function 
+ * definitions in the `definitions.ml` and `arithmetic.ml` files.
  *)
 
 

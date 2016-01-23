@@ -1,5 +1,5 @@
 (** 
- * Ausiliary arithmetic functions.
+ * Auxiliary arithmetic functions.
  *)
 
 
@@ -79,7 +79,7 @@ let str_to_bigint_list s =
       | n when n >= 0 && n <= 9 -> plus,  0, l
       | n when n = plus         -> plus,  1, l - 1
       | n when n = minus        -> minus, 1, l - 1
-      | _                       -> failwith "TODO str_to_bigint_list" in
+      | _                       -> failwith "str_to_bigint_list: invalid" in
 
     (* Determine the number of list items needed to represent the digits. *)
     let n = len / log_base in
