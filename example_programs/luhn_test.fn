@@ -1,0 +1,33 @@
+(* Luhn test on fake credit card number 4556283522339789 *)
+let luhn = fun(l) ->
+  let length = fun(l) ->
+    if l = []
+      then 0
+      else 1 + length (TL l)
+  in
+  let op = fun (e) ->
+    if e >= 0 && e <= 4
+      then e * 2
+    else if e > 4 && e < 10
+      then e * 2 - 9
+    else -1 (* Error *)
+  in
+(* Apply on even digits starting from right *)
+  let apply = fun(l; dnum) ->
+    if l = []
+      then []
+    else if dnum % 2 = 0
+      then (op (HD l)) :: (apply (TL l; dnum - 1))
+    else 
+      (HD l) :: (apply (TL l; dnum - 1))
+  in
+  let sum = fun (l) ->
+  	if l = []
+  		then 0
+  	else if (HD l) < 0 || (HD l) > 9
+  		then -100000000000 (* Error *)
+  	else (HD l) + sum(TL l)
+  in
+  let s = sum (apply (l; length (l))) in
+  s > 0 && s % 10 = 0
+in luhn([4;5;5;6;2;8;3;5;2;2;3;3;9;7;8;9])
