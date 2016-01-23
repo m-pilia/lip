@@ -1,0 +1,29 @@
+(* Luhn checksum 
+ * Should return [true; true; true; false; false; false]
+ *)
+
+let rev = fun (l; r) -> if l = [] then r else rev(TL l; HD l :: r)
+
+and luhn = fun (l) ->
+  let luhnr = fun (r; s; l) ->
+    if l = [] then
+      r      
+    else
+      let d = s * HD l in
+      luhnr(r + d / 10 + d % 10; 3 - s; TL l) in
+  luhnr(0; 1; rev(l; [])) % 10 = 0
+
+and map = fun (f; l) -> if l = [] then [] else f(HD l) :: map(f; TL l)
+
+and l = 
+  [
+    [6; 3; 4; 2; 5; 7; 0; 5; 6; 7; 8];       (* valid *)
+    [6; 3; 4; 0; 2; 1; 5; 7; 4; 5; 0; 0];    (* valid *)
+    [6; 3; 4; 0; 5; 6; 7; 4; 0; 6; 8; 5; 9]; (* valid *)
+    [2; 6; 5; 8; 6; 2; 1; 8; 2; 4; 8; 7];    (* invalid *)
+    [6; 3; 4; 7; 5; 9; 2; 3; 6; 5; 7];       (* invalid *)
+    [6; 7; 2; 3; 6; 7; 5; 9; 3; 8]           (* invalid *)
+  ]
+
+in 
+  map(luhn; l)
