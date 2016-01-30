@@ -60,7 +60,7 @@ type exp =
  * ## Bigint
  *
  * The big integer is represented as a couple of a list of digit chunks and a 
- * sign. Each chunk contains `log_base` digits each. The head of the list 
+ * sign. Each chunk contains `log_base` digits. The head of the list 
  * contains the chunk with the least significative digits, and each following 
  * chunk contains digits more significative than the preceeding. Each chunk of
  * digits is represented as an integer value.

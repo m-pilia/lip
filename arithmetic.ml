@@ -5,7 +5,7 @@
 
 (** 
  * Plus and minus signs, encoded as their character numeric value minus the 
- * character value of '0'.
+ * numeric value of '0'.
  *)
 let plus, minus = 
   let zero = Char.code '0' in
@@ -137,7 +137,7 @@ let bigint_repr l =
  *         and `s` is the sign object.
  *)
 let cast_int n =
-  (* NOTE: an int value may exceed a single digit chunk. *)
+  (* NOTE: the conversion of an int value may exceed a single digit chunk. *)
   bigint_repr (str_to_bigint_list (string_of_int n))
 ;;
 
@@ -221,10 +221,10 @@ let rec zero_trim x =
 
 
 (**
- * Sum two positive integers expressed as lists of digit chunks.
+ * Sum of two positive integers, expressed as lists of digit chunks.
  * @param a First addend.
  * @param b Second addend.
- * @return The a + b sum.
+ * @return The a + b sum result.
  *)
 let rec bsump a b =
   (** 
@@ -254,10 +254,10 @@ let rec bsump a b =
 
 
 (** 
- * Subtract two positive integers expressed as lists of digit chunks.
+ * Subtraction of two positive integers, expressed as lists of digit chunks.
  * @param a Minuend.
  * @param b Subtraend.
- * @return The a - b subtraction.
+ * @return The a - b subtraction result.
  *)
 let bsubp a b =
   (**
@@ -290,7 +290,7 @@ let bsubp a b =
 
 
 (** 
- * Sum two Bigint values, represented as lists of digit chunks.
+ * Sum of two Bigint values, represented as lists of digit chunks.
  * @param a  First addend (list of int digits).
  * @param sa First addend's sign.
  * @param b  Second addend (list of int digits).
@@ -324,7 +324,7 @@ let bsub (a, sa) (b, sb) =
  * @param l List to be split.
  * @return A couple (l1, l2) of lists such that 
  *         l = l1 @ l2
- *         List.length l = n
+ *         List.length l1 = n
  *)
 let split n l =
   let rec spr k a b = function
@@ -417,11 +417,11 @@ let bmul_naive (a, sa) (b, sb) =
  *)
 let bmul (x, sx) (y, sy) =
   (** 
-   * Below this thereshold value the naive multiplication should be convenient. 
+   * Below this threshold value the naive multiplication should be convenient. 
    * This value was obtained with some rough experiments on a 
    * Intel i7 4790k machine.
    *)
-  let _THERESHOLD = 55 in
+  let _THRESHOLD = 55 in
   
   (** Return a list containing n zeros. *)
   let rec zeros n = if n < 1 then [] else 0 :: zeros (n - 1) in
@@ -431,7 +431,7 @@ let bmul (x, sx) (y, sy) =
     let nx, ny = List.length x, List.length y in
     let nmin, nmax = min nx ny, max nx ny in
     
-    if nmin < _THERESHOLD then
+    if nmin < _THRESHOLD then
       fst (bmul_naive (x, sx) (y, sy))
     else
       let m = nmax / 2 in 
